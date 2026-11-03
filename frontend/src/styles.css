@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans Variable", var(--font-sans);
+  --radius-card: 1.25rem;
+  --color-brand-50: #eef4ff;
+  --color-brand-500: #2f5bea;
+  --color-brand-600: #2246c4;
+  --color-brand-900: #0b1a4a;
+  --color-accent-400: #fbbf24;
+  --color-accent-600: #d97706;
+  --color-ink: #0b1220;
+  --color-muted: #475467;
+  --color-surface: #ffffff;
+  --color-surface-2: #f6f7fb;
+  --color-line: #e4e7ec;
+}
+
+:root {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand-500);
+  outline-offset: 3px;
+}
+
+.starter {
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  padding: 2rem;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 75% 20%, rgb(47 91 234 / 10%), transparent 40%),
+    var(--color-surface);
+}
+
+.starter h1 {
+  max-width: 14ch;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  line-height: 1.05;
+  letter-spacing: -0.055em;
+}
+
+.starter__eyebrow {
+  margin: 0 0 1rem;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

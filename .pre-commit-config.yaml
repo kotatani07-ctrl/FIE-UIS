@@ -1,0 +1,28 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: ruff check backend
+        language: system
+        pass_filenames: false
+      - id: ruff-format
+        name: ruff format check
+        entry: ruff format --check backend
+        language: system
+        pass_filenames: false
+      - id: eslint
+        name: eslint
+        entry: npm run lint --prefix frontend
+        language: system
+        pass_filenames: false
+      - id: prettier
+        name: prettier check
+        entry: npm run format:check --prefix frontend
+        language: system
+        pass_filenames: false
+      - id: gitleaks
+        name: gitleaks
+        entry: gitleaks detect --no-banner
+        language: system
+        pass_filenames: false
