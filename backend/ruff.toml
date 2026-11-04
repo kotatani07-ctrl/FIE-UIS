@@ -1,0 +1,6 @@
+extend-exclude = ["**/migrations/**"]
+
+[lint.per-file-ignores]
+"apps/**/admin.py" = ["RUF012"]
+"apps/news/models.py" = ["RUF012"]
+"apps/downloads/models.py" = ["RUF012"]

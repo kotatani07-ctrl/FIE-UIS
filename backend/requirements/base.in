@@ -1,4 +1,11 @@
 Django==5.2.18
 django-environ==0.14.0
+django-ckeditor-5
+django-simple-history
 djangorestframework==3.18.3
+nh3
+Pillow
+pillow-avif-plugin
 psycopg[binary]==3.3.7
+python-magic
+python-slugify

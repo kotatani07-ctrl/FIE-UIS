@@ -4,11 +4,30 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0b1a4a" />
+    <meta name="color-scheme" content="light dark" />
     <meta
       name="description"
-      content="Website informasi Fakultas Ilmu Ekonomi, Universitas Ichsan Satya."
+      content="Pusat informasi akademik, program studi, berita, dan agenda Fakultas Ilmu Ekonomi, Universitas Ichsan Satya."
     />
     <title>Fakultas Ilmu Ekonomi — Universitas Ichsan Satya</title>
+    <script>
+      (function () {
+        try {
+          var stored = window.localStorage.getItem("theme");
+          var pref =
+            stored === "light" || stored === "dark" || stored === "system"
+              ? stored
+              : "system";
+          var isDark =
+            pref === "dark" ||
+            (pref === "system" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = isDark ? "dark" : "light";
+        } catch {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

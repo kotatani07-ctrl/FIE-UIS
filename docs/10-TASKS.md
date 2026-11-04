@@ -8,19 +8,22 @@ Centang `[x]` hanya jika ada bukti. Jangan mengerjakan hal di luar fase.
 ## Fase 0 — Fondasi repo & tooling
 - [x] Struktur monorepo (`AGENTS.md` §3), `.gitignore`, `.editorconfig`, `.env.example` (BE & FE), pre-commit (ruff, eslint, prettier, gitleaks)
 - [x] Verifikasi & pin versi stabil terbaru → `docs/VERSIONS.md`
-- [ ] `backend/`: Django project, settings pecah (base/dev/prod/test), PostgreSQL via Docker, pytest hidup (Compose config valid, tetapi daemon menolak akses socket untuk user saat ini)
-- [x] `frontend/`: Vite+React+TS strict+Tailwind v4, ESLint/Prettier/Vitest/Playwright terpasang, halaman kosong berjalan
-- [x] `deploy/`: docker-compose dev, Nginx dev, CI minimal (lint+test); Compose config tervalidasi, uji integrasi menunggu akses daemon
+- [x] `backend/`: Django project, settings pecah (base/dev/prod/test), PostgreSQL via Docker; 24 tes backend lulus, coverage 89,79%; Compose berjalan
+- [x] `frontend/`: Vite+React+TS strict+Tailwind v4, ESLint/Prettier/Vitest/Playwright terpasang; beranda pratinjau berjalan, belum terhubung ke API CMS
+- [x] `deploy/`: docker-compose dev, Nginx dev, CI minimal (lint+test); stack FE+BE+DB+Nginx telah diuji langsung melalui Docker
 **Selesai bila**: `docker compose up` menjalankan FE+BE+DB; CI hijau; belum ada fitur.
 
 ## Fase 1 — Backend: model, admin, sanitasi, media
-- [ ] App `core` (mixin, `SiteSetting` singleton, sanitizer `nh3`, validator upload, pipeline gambar WebP/AVIF)
-- [ ] Model & migrasi sesuai `06-BACKEND-RULES.md` §3 + `simple_history`
-- [ ] Admin lengkap (list/filter/search/aksi massal, pratinjau gambar, editor rich text + paste-from-Word bersih)
-- [ ] Validasi layak terbit (§6), grup & izin (Editor/Admin Fakultas), data migration grup
-- [ ] `seed_dummy` (ditolak di prod), `check_files`
-- [ ] Test: sanitizer (fixture Word), upload (CMYK→RGB, varian), validasi terbit, izin peran
+- [x] App `core` (mixin, `SiteSetting` singleton, sanitizer `nh3`, validator upload, pipeline gambar WebP/AVIF)
+- [x] Model & migrasi sesuai `06-BACKEND-RULES.md` §3 + `simple_history`
+- [x] Admin konten (list/filter/search/aksi massal, pratinjau gambar, editor rich text; sanitizer membersihkan markup Word)
+- [x] Validasi layak terbit (§6), grup & izin (Editor/Admin Fakultas), data migration grup
+- [x] `seed_dummy` (ditolak di prod), `check_files`, `publish_scheduled`
+- [x] Test: sanitizer (markup Word), upload (CMYK→RGB, varian), validasi terbit, izin peran
 **Selesai bila**: editor dapat CRUD semua konten di Admin; tempel Word menghasilkan HTML bersih; gambar menjadi varian ringan.
+**Bukti validasi**: 24 tes lulus (coverage 89,79%); Django checks, cek migrasi, `check_files`, Ruff lint/format, dan konfigurasi Compose lulus. Smoke test lokal: beranda 200, login Admin 200, `/media/` untuk berkas yang tidak ada 404.
+
+**Catatan frontend saat ini**: build, lint, typecheck, dan tes unit lulus. E2E masih menemukan kegagalan kontras teks (2,77:1; target 4,5:1). Beranda yang berjalan masih pratinjau dengan data contoh dan belum memakai API CMS; API serta integrasinya termasuk fase berikutnya.
 
 ## Fase 2 — Backend: API publik, SEO endpoint, keamanan API
 - [ ] Endpoint `08-API-SPEC.md` + filter/paginasi/pencarian + OpenAPI
