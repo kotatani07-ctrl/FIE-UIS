@@ -23,24 +23,34 @@ Centang `[x]` hanya jika ada bukti. Jangan mengerjakan hal di luar fase.
 **Selesai bila**: editor dapat CRUD semua konten di Admin; tempel Word menghasilkan HTML bersih; gambar menjadi varian ringan.
 **Bukti validasi**: 24 tes lulus (coverage 89,79%); Django checks, cek migrasi, `check_files`, Ruff lint/format, dan konfigurasi Compose lulus. Smoke test lokal: beranda 200, login Admin 200, `/media/` untuk berkas yang tidak ada 404.
 
-**Catatan frontend saat ini**: build, lint, typecheck, dan tes unit lulus. E2E masih menemukan kegagalan kontras teks (2,77:1; target 4,5:1). Beranda yang berjalan masih pratinjau dengan data contoh dan belum memakai API CMS; API serta integrasinya termasuk fase berikutnya.
+**Catatan frontend pada akhir Fase 3**: fondasi dan design system telah
+diimplementasikan serta divalidasi. Beranda masih pratinjau dengan sebagian
+data contoh; integrasi konten CMS dan halaman publik lengkap termasuk Fase 4.
 
 ## Fase 2 — Backend: API publik, SEO endpoint, keamanan API
-- [ ] Endpoint `08-API-SPEC.md` + filter/paginasi/pencarian + OpenAPI
-- [ ] Throttle, CORS ketat, renderer JSON saja, error seragam, caching/ETag
-- [ ] `POST /contact/` (honeypot + Turnstile + throttle + simpan aman + email notifikasi)
-- [ ] `sitemap.xml`, `robots.txt`, `rss.xml`, `/seo/<path>`, `security.txt`, `/health/`
-- [ ] Test perilaku API §4 (404 di luar rentang, tanpa duplikat, agenda upcoming, `assertNumQueries`)
+- [x] Endpoint `08-API-SPEC.md` + filter/paginasi/pencarian + OpenAPI
+- [x] Throttle, CORS ketat, renderer JSON saja, error seragam, caching/ETag
+- [x] `POST /contact/` (honeypot + Turnstile + throttle + simpan aman + email notifikasi)
+- [x] `sitemap.xml`, `robots.txt`, `rss.xml`, `/seo/<path>`, `security.txt`, `/health/`
+- [x] Test perilaku API §4 (404 di luar rentang, batas paginasi, sanitasi, throttle lintas IP, agenda upcoming, `assertNumQueries`)
 **Selesai bila**: seluruh kontrak lulus test; `check --deploy` bersih.
+**Bukti validasi**: 64 tes lulus, coverage 90%; Ruff lint/format, validasi skema
+OpenAPI, Django checks, cek migrasi, cek media, konfigurasi Compose, dan
+`check --deploy` lulus. Endpoint API/SEO, Admin, unduhan, dan beranda diuji lagi
+setelah layanan Compose diperbarui.
 
 ## Fase 3 — Frontend: fondasi & design system
-- [ ] Token Tailwind, tema tri-state (+test), font self-host, `prose`
-- [ ] `routes.ts`, router, layout (Header + MegaMenu, MobileDrawer, Footer, SkipLink, ThemeToggle)
-- [ ] Komponen UI (`03` §4) dengan Storybook opsional atau halaman `/__ui` (non-prod)
-- [ ] `api/client.ts`, tipe, hooks Query; `Seo`, `Picture`, `ExternalLink`, `SafeHtml`, `formatDate`
-- [ ] `NotFoundPage` (noindex, Indonesia), ErrorBoundary global
-- [ ] Test: tema, formatDate, Picture fallback, ExternalLink, drawer (scroll lock/focus trap)
+- [x] Token Tailwind, tema tri-state (+test), font self-host, `prose`
+- [x] `routes.ts`, router, layout (Header + MegaMenu, MobileDrawer, Footer, SkipLink, ThemeToggle)
+- [x] Komponen UI (`03` §4) dengan Storybook opsional atau halaman `/__ui` (non-prod)
+- [x] `api/client.ts`, tipe, hooks Query; `Seo`, `Picture`, `ExternalLink`, `SafeHtml`, `formatDate`
+- [x] `NotFoundPage` (noindex, Indonesia), ErrorBoundary global
+- [x] Test: tema, formatDate, Picture fallback, ExternalLink, drawer (scroll lock/focus trap)
 **Selesai bila**: kerangka situs tampil konsisten light/dark, axe bersih pada layout.
+**Bukti validasi**: TypeScript, ESLint, Prettier, build, dan `npm audit` lulus
+(0 temuan); 27 tes unit dan 4 tes Playwright/axe lulus. Smoke test Docker:
+beranda, health API, dan Admin 200; path tidak dikenal 404; halaman beranda
+terlihat di `http://localhost:8080`.
 
 ## Fase 4 — Frontend: halaman & fitur
 - [ ] Beranda (kecuali 3D): hero carousel aksesibel, statistik, prodi, berita, agenda, pengumuman, mitra, CTA

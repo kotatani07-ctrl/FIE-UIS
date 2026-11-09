@@ -59,12 +59,20 @@ class ImagePreviewAdmin(SimpleHistoryAdmin):
 
     @admin.action(description="Jadikan draf")
     def draft_selected(self, request, queryset):
-        count = queryset.update(status="draft")
+        count = 0
+        for item in queryset:
+            item.status = item.Status.DRAFT
+            item.save(update_fields=["status", "updated_at"])
+            count += 1
         self.message_user(request, f"{count} konten dijadikan draf.")
 
     @admin.action(description="Arsipkan")
     def archive_selected(self, request, queryset):
-        count = queryset.update(status="archived")
+        count = 0
+        for item in queryset:
+            item.status = item.Status.ARCHIVED
+            item.save(update_fields=["status", "updated_at"])
+            count += 1
         self.message_user(request, f"{count} konten diarsipkan.")
 
 

@@ -16,7 +16,7 @@ gitleaks detect --no-banner
 npm ci
 npm run lint && npm run typecheck
 npm run test -- --run
-npm run build && npm run analyze:size   # cek budget bundle
+npm run build && npm run analyze:size   # cek budget gzip JS/CSS di halaman awal
 npm audit --audit-level=high
 npx playwright test                     # e2e + axe
 npx lhci autorun                        # Lighthouse CI (mobile & desktop)

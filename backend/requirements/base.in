@@ -1,8 +1,12 @@
 Django==5.2.18
 django-environ==0.14.0
+django-cors-headers
 django-ckeditor-5
+django-filter
+django-redis
 django-simple-history
 djangorestframework==3.18.3
+drf-spectacular
 nh3
 Pillow
 pillow-avif-plugin

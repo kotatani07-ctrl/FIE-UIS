@@ -1,0 +1,29 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block bodyclass %}{{ block.super }} fie-dashboard-page{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+{% block content_title %}{% endblock %}
+{% block sidebar %}{% endblock %}
+
+{% block content %}
+  <div id="fie-admin-dashboard" data-dashboard-url="{% url 'admin-dashboard-data' %}">
+    <div class="fie-dashboard-skeleton" aria-hidden="true">
+      <div class="fie-skeleton-line fie-skeleton-line-sm"></div>
+      <div class="fie-skeleton-line fie-skeleton-line-lg"></div>
+      <div class="fie-skeleton-grid">
+        <div class="fie-skeleton-card"></div>
+        <div class="fie-skeleton-card"></div>
+        <div class="fie-skeleton-card"></div>
+        <div class="fie-skeleton-card"></div>
+      </div>
+      <div class="fie-skeleton-panel"></div>
+    </div>
+    <noscript>
+      <div class="fie-noscript">
+        JavaScript dinonaktifkan. Dashboard interaktif tidak dapat dimuat, tetapi menu pengelolaan tetap tersedia di bawah ini.
+      </div>
+      {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+    </noscript>
+  </div>
+{% endblock %}

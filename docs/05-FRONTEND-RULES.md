@@ -18,7 +18,8 @@
 
 ## 3. Data & API
 - `api/client.ts`: base URL dari env, `AbortController` + timeout 10 dtk, parse error terstruktur,
-  **tidak** menyimpan kredensial. Hanya origin API yang diizinkan.
+  **tidak** menyimpan kredensial. Permintaan hanya ke origin yang sama (`/api/v1/`); GET publik
+  dan POST kontak adalah satu-satunya metode yang diizinkan.
 - Tipe di `api/types.ts` mengikuti `08-API-SPEC.md`; validasi respons kritis dengan Zod (`safeParse`) dan
   tampilkan ErrorState bila bentuk tak sesuai.
 - Setiap daftar punya 4 keadaan: **loading (skeleton) · error (retry) · empty · data**. Tidak boleh ada ruang kosong tanpa penjelasan.
@@ -59,7 +60,7 @@ Prerender & fallback bot: lihat `02-ARCHITECTURE.md` §2.
 
 ## 6b. Util wajib
 - `formatDate(iso, style)` → `Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta' })` ("19 Mei 2026"); **satu-satunya** cara menampilkan tanggal.
-- `ExternalLink`, `Picture`, `Seo`, `Prose`, `Reveal`, `useTheme`, `useCanRender3D` — jangan menduplikasi logikanya.
+- `ExternalLink`, `Picture`, `Seo`, `Prose`, `Reveal`, `useTheme` — jangan menduplikasi logikanya.
 
 ## 7b. Keamanan sisi FE
 Lihat `07-SECURITY.md` §B. Ringkas: tanpa `eval`/`new Function`, tanpa `innerHTML` mentah, tanpa secret di bundel,

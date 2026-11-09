@@ -1,48 +1,76 @@
+import { useUpcomingEvents } from "@/api/hooks";
+import { ListEmpty, ListError, LoadingBlock } from "@/components/ListFeedback";
 import { Reveal } from "@/components/Reveal";
 import { Container, SectionHeading } from "@/components/ui";
-import { formatDateTime } from "@/lib/formatDate";
-import { agenda } from "@/lib/site";
+import { formatDateTime, formatDateParts } from "@/lib/formatDate";
+import { agendaCard } from "@/lib/content";
 
 export function Agenda() {
+  const { data, isPending, isError, refetch } = useUpcomingEvents();
+  const items = (data?.results ?? []).map(agendaCard);
+
   return (
     <section
       id="agenda"
       aria-labelledby="agenda-title"
-      className="border-y border-line bg-surface-2 py-20 lg:py-28"
+      className="border-b border-line bg-surface-2 py-20 lg:py-24"
     >
       <Container>
         <Reveal>
           <SectionHeading
             id="agenda-title"
-            eyebrow="Agenda"
             title="Kegiatan mendatang"
-            description="Hanya menampilkan agenda yang belum lewat, diurutkan berdasarkan waktu mulai."
+            description="Kegiatan akademik dan sosialisasi yang akan datang."
           />
         </Reveal>
 
-        <ul className="mt-12 flex flex-col gap-4">
-          {agenda.map((item, index) => (
-            <li key={item.slug}>
-              <Reveal
-                delay={index * 80}
-                className="flex flex-col gap-4 rounded-card border border-line bg-surface p-6 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">
-                    {formatDateTime(item.startAt)}
-                  </p>
-                  <h3 className="mt-2 font-display text-lg font-bold text-ink">
-                    {item.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted">{item.location}</p>
-                </div>
-                <span className="inline-flex w-fit items-center rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
-                  Mendatang
-                </span>
-              </Reveal>
-            </li>
-          ))}
-        </ul>
+        <Reveal delay={100}>
+          {isPending ? (
+            <LoadingBlock label="Memuat agenda" rows={3} />
+          ) : isError ? (
+            <ListError onRetry={() => refetch()} />
+          ) : items.length === 0 ? (
+            <ListEmpty
+              title="Belum ada agenda mendatang"
+              description="Agenda akan tampil di sini setelah diterbitkan."
+            />
+          ) : (
+            <ul className="mt-10 divide-y divide-line border-y border-line">
+              {items.map((item) => {
+                const { day, month } = formatDateParts(item.startAt);
+                return (
+                  <li
+                    key={item.slug}
+                    className="flex flex-col gap-3 py-6 sm:flex-row sm:items-center sm:gap-6"
+                  >
+                    <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl bg-surface text-brand-700 ring-1 ring-line">
+                      <span className="font-display text-2xl font-bold leading-none">
+                        {day}
+                      </span>
+                      <span className="mt-0.5 text-[0.65rem] font-semibold uppercase">
+                        {month}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <time
+                        dateTime={item.startAt}
+                        className="text-sm font-semibold text-brand-600"
+                      >
+                        {formatDateTime(item.startAt)}
+                      </time>
+                      <h3 className="mt-1 font-display text-lg font-bold text-ink">
+                        {item.title}
+                      </h3>
+                    </div>
+                    <p className="shrink-0 text-sm text-muted sm:ml-auto">
+                      {item.location}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Reveal>
       </Container>
     </section>
   );

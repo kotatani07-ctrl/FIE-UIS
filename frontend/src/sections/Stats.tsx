@@ -1,38 +1,54 @@
+import { useSiteSettings } from "@/api/hooks";
 import { Reveal } from "@/components/Reveal";
 import { Container, SectionHeading } from "@/components/ui";
-import { stats } from "@/lib/site";
 
 export function Stats() {
+  const { data, isPending } = useSiteSettings();
+
+  const stats = data
+    ? [
+        { label: "Program Studi", value: data.stats_programs },
+        { label: "Dosen", value: data.stats_lecturers },
+        { label: "Mahasiswa Aktif", value: data.stats_students },
+        { label: "Mitra Kerja Sama", value: data.stats_partners },
+      ].filter((stat) => stat.value > 0)
+    : [];
+
+  if (isPending || stats.length === 0) {
+    return null;
+  }
+
   return (
     <section
       id="statistik"
       aria-labelledby="statistik-title"
-      className="py-20 lg:py-28"
+      className="border-b border-line py-16 lg:py-20"
     >
       <Container>
         <Reveal>
           <SectionHeading
             id="statistik-title"
-            eyebrow="Statistik"
             title="Fakultas dalam angka"
-            description="Ringkasan data fakultas. Angka ditampilkan dari pengaturan situs (SiteSetting) pada implementasi berikutnya."
+            description="Data resmi fakultas."
           />
         </Reveal>
-
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat, index) => (
-            <Reveal key={stat.label} delay={index * 80}>
-              <div className="h-full rounded-card border border-line bg-surface-2 p-6">
-                <p className="font-display text-4xl font-bold tracking-tight text-brand-600">
-                  {stat.value}
-                </p>
-                <p className="mt-2 text-sm font-semibold text-muted">
+        <Reveal delay={100}>
+          <dl className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-card border border-line bg-surface-2 p-6"
+              >
+                <dt className="text-sm font-semibold text-muted">
                   {stat.label}
-                </p>
+                </dt>
+                <dd className="mt-2 font-display text-4xl font-bold tracking-tight text-brand-600">
+                  {stat.value}
+                </dd>
               </div>
-            </Reveal>
-          ))}
-        </div>
+            ))}
+          </dl>
+        </Reveal>
       </Container>
     </section>
   );

@@ -32,19 +32,28 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.Argon2PasswordHasher", ...]   #
 - Header `Server`/versi disembunyikan di Nginx (`server_tokens off`). Tidak ada `X-Powered-By`.
 
 ### A2. Admin
-- Path rahasia dari env (`ADMIN_URL_PREFIX`), **2FA TOTP wajib** (staf tanpa perangkat 2FA tidak bisa masuk),
-  `django-axes` (5 gagal → kunci 15 mnt, per IP+username), pesan login generik, tanpa enumerasi user.
-- Opsi lapis tambahan: batasi admin per IP/VPN di Nginx (`allow/deny`), atau subdomain terpisah.
-- Hak minimal per grup (lihat `06` §4). Superuser ≤ 2 orang. Semua perubahan konten tercatat (`simple_history`) +
-  log akses admin ke file terpisah.
-- Pemulihan akun lewat prosedur manual terdokumentasi (bukan reset email otomatis) atau reset dengan token sekali pakai + 2FA.
+- Path rahasia dari env (`ADMIN_URL_PREFIX`) — **sudah** dibaca settings dan dipakai
+  `config/urls.py` (default `/kelola/`; produksi menolak path default).
+- Batasi admin per IP/VPN di Nginx (`allow/deny`) + `limit_req` login — **sudah** ada
+  di `deploy/nginx/dev.conf` dan `prod.conf`.
+- **Belum aktif**: 2FA TOTP (`django-otp`/`django-two-factor-auth`) dan `django-axes`
+  (5 gagal → kunci 15 mnt). Keduanya menambah dependency baru; menunggu persetujuan.
+  Sampai aktif, admin hanya dilindungi path rahasia + rate limit Nginx + password
+  minimal 12 karakter.
+- Pesan login generik, tanpa enumerasi user. Hak minimal per grup (lihat `06` §4).
+  Superuser ≤ 2 orang. Semua perubahan konten tercatat (`simple_history`) + log akses
+  admin ke file terpisah.
+- Pemulihan akun lewat prosedur manual terdokumentasi (bukan reset email otomatis) atau
+  reset dengan token sekali pakai + 2FA.
 
 ### A3. API (DRF)
 - Default permission `AllowAny` **hanya** pada view publik read-only yang eksplisit; selebihnya `IsAdminUser`. Tambahkan test yang gagal
   bila ada view baru tanpa `permission_classes` eksplisit.
+- `DEFAULT_AUTHENTICATION_CLASSES` = `SessionAuthentication` saja (Basic auth nonaktif);
+  `PreviewView` dibatasi session + `ScopedRateThrottle` `preview`.
 - Tidak ada metode tulis publik selain `POST /contact/`. Metode lain → 405.
 - Throttle: `AnonRateThrottle` 120/menit global; `ScopedRateThrottle` `contact` 5/jam/IP + 20/hari/email; `search` 30/menit.
-  Cache backend untuk throttle = Redis (bukan LocMem) di produksi multi-worker.
+  Cache backend untuk throttle wajib Redis di produksi (bukan LocMem) multi-worker.
 - Serializer eksplisit; **tidak** membocorkan field internal (`status`, `created_by`, `ip_hash`, path file server).
 - Input: batasi panjang semua field teks; tolak payload > 100 KB; `parser_classes = [JSONParser]` untuk contact.
 - Formulir kontak: **honeypot** + **Cloudflare Turnstile** (verifikasi server-side, timeout, fail-closed) + validasi email +
@@ -58,6 +67,9 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.Argon2PasswordHasher", ...]   #
 ### A4. Upload & file
 - Validasi ekstensi **dan** MIME nyata **dan** ukuran; nama acak; simpan di luar webroot eksekusi; Nginx `location /media/ { add_header X-Content-Type-Options nosniff; … }`
   tanpa menjalankan skrip; `Content-Disposition: attachment` untuk dokumen. Tolak SVG/HTML/JS/EXE. (Opsional: pindai ClamAV.)
+- Dokumen `research/`, `announcements/`, dan `downloads/` **tidak** boleh diakses lewat
+  `/media/`; Nginx mengembalikan 404 dan unduhan hanya lewat `/files/download/<pk>/`
+  yang memeriksa `is_active`.
 - Gambar diproses ulang oleh Pillow (menghapus payload tersembunyi/EXIF), batasi `Image.MAX_IMAGE_PIXELS` (anti decompression bomb).
 
 ### A5. Data & rahasia
@@ -118,7 +130,7 @@ Renovate/Dependabot, larang paket tanpa pemeliharaan jelas, `overrides` untuk ke
 ## D. Checklist keamanan (harus tercentang sebelum rilis)
 - [ ] `manage.py check --deploy` bersih · `pip-audit` & `npm audit` (high+) bersih · `gitleaks` bersih
 - [ ] securityheaders.com ≥ A+ · SSL Labs ≥ A · CSP tanpa `unsafe-inline/eval`
-- [ ] Admin: path rahasia, 2FA wajib, axes aktif, peran diuji (Editor tak bisa kelola user/setting)
+- [ ] Admin: path rahasia **(sudah)**, 2FA wajib **(BELUM, menunggu dependency)**, axes aktif **(BELUM)**, peran diuji (Editor tak bisa kelola user/setting)
 - [ ] API: tidak ada endpoint tulis selain kontak; throttle terbukti (429); CORS hanya origin FE
 - [ ] Upload: tolak SVG/EXE/ekstensi ganda/MIME palsu; gambar diproses ulang; file hilang terdeteksi `check_files`
 - [ ] XSS: payload uji (`<img onerror>`, `javascript:`, `<svg onload>`) disanitasi di server **dan** klien

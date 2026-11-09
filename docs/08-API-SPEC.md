@@ -38,8 +38,11 @@ Konten selalu hanya yang `published` dan `published_at <= now`. Tanggal: ISO-860
 | `GET /preview/{model}/{id}/` | Pratinjau draf (staf, token bertanda tangan) | `token` |
 | `GET /health/` | `{status:"ok"}` (tanpa detail internal) | — |
 
-Di luar `/api/v1/` (Django, diproksi Nginx): `GET /sitemap.xml`, `GET /robots.txt` (text/plain),
-`GET /rss.xml`, `GET /seo/<path>` (HTML ringkas untuk bot), `GET /.well-known/security.txt`.
+Di luar `/api/v1/` (Django, diproksi Nginx): `GET /health/`, `GET /sitemap.xml`,
+`GET /robots.txt` (text/plain), `GET /rss.xml`, `GET /seo/<path>` (HTML ringkas
+untuk bot), `GET /.well-known/security.txt`, dan `GET /files/download/{id}/`
+(unduhan sebagai attachment). Health juga tersedia di `/api/v1/health/`.
+`GET /api/v1/schema/` hanya tersedia saat `DEBUG=True`; di produksi URL ini 404.
 
 ## 3. Contoh bentuk
 ```jsonc
@@ -73,4 +76,6 @@ Di luar `/api/v1/` (Django, diproksi Nginx): `GET /sitemap.xml`, `GET /robots.tx
 5. `X-Total-Count` tidak diperlukan; gunakan `count`. `page_size` maks 50.
 6. Respons GET publik membawa `Cache-Control` + `ETag`; mendukung `If-None-Match` (304).
 7. Skema OpenAPI dihasilkan `drf-spectacular`; FE men-generate tipe (`openapi-typescript`) atau menyalin manual **dan** dites terhadap skema.
-8. Versi: perubahan yang memecah kontrak → `/api/v2/`.
+8. `POST /contact/` dibatasi per IP dan per alamat email; Turnstile dan
+   konfigurasi email wajib tersedia agar pesan dapat dikirim.
+9. Versi: perubahan yang memecah kontrak → `/api/v2/`.

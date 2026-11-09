@@ -1,65 +1,65 @@
-# 04 — Visual 3D (bagus tapi ringan)
+# 04 — Visual 3D (video loop)
+
+> Hero memakai video animasi 3D yang disediakan, bukan scene WebGL yang dirender
+> saat runtime. Ini menjaga bundle tetap ringan dan hasil visual sesuai aset.
 
 ## 1. Prinsip
 3D adalah **hiasan progresif**, bukan syarat. Situs harus utuh, cepat, dan informatif
-**tanpa** 3D. Jika perangkat/preferensi tidak cocok, tampilkan poster statis.
+tanpa video. Jika perangkat/preferensi tidak cocok, tampilkan poster statis.
 
-## 2. Konsep visual (tema ekonomi, low-poly, gaya "glass & gradient")
-Pilih **satu** (default: A), dibuat **prosedural** (tanpa model besar):
-- **A. "Bar Growth"**: 5–7 balok semi-transparan bergradien naik-turun pelan seperti grafik batang,
-  ditambah 3–4 koin low-poly berputar lambat dan garis tren ber-glow.
-- **B. "Globe of Dots"**: bola titik (instanced points) dengan arc koneksi tipis (kemitraan).
-- **C. "Floating Shapes"**: kubus/ikosahedron/torus berkilau mengambang mengikuti kursor halus.
-Sorot dengan warna token brand/accent; latar transparan agar menyatu dengan hero.
+## 2. Aset
+| Aset | Ukuran | Fungsi |
+|---|---:|---|
+| `frontend/asset/economy-loop.mp4` | 474 KB | Video hero, 800x600, 10 detik, tanpa audio, loop |
+| `frontend/asset/hero-economy.jpg` | 42 KB | Poster hero sebelum video siap / reduced-motion |
+| `frontend/asset/news-pmb.jpg` | 40 KB | Gambar berita unggulan (crop 16:9) |
+| `frontend/asset/news-pie.jpg` | 26 KB | Gambar berita kedua |
+| `frontend/asset/news-bars.jpg` | 19 KB | Gambar berita ketiga |
+| `frontend/asset/announcement-visual.jpg` | 15 KB | Panel visual pengumuman |
 
-## 3. Stack & aturan teknis
-- `three`, `@react-three/fiber`, `@react-three/drei` (impor **per-simbol**, tree-shaking; dilarang `import * as THREE`
-  kecuali terbukti perlu).
-- **Satu** `<Canvas>` di seluruh situs. Hanya di hero beranda.
-- Komponen dimuat dengan `React.lazy` + `Suspense`; chunk terpisah (`manualChunks: { three: [...] }`),
-  **dimuat setelah LCP** lewat `requestIdleCallback` (fallback `setTimeout`) dan `IntersectionObserver`.
-- `dpr={[1, 1.5]}`, `antialias` hanya bila `devicePixelRatio < 2`, `powerPreference: 'low-power'`,
-  `alpha: true`, `frameloop="demand"` + `invalidate()` saat animasi aktif; **jeda** saat tab tersembunyi
-  atau scene keluar viewport.
-- Geometri: instancing (`InstancedMesh`) untuk objek berulang; segmen rendah; **≤ 30.000 segitiga total**;
-  ≤ 12 draw call. Material: `MeshStandardMaterial`/`MeshPhysicalMaterial` sederhana atau `MeshBasicMaterial` gradien;
-  hindari transmission/refraksi berat dan post-processing (bloom, SSAO) — palsukan glow dengan sprite/gradien.
-- Pencahayaan: 1 ambient + 1–2 directional; **tanpa shadow map**. Environment: gradien kecil / `Environment preset`
-  hanya bila ≤ 50 KB, jika tidak pakai pencahayaan manual.
-- Bila memakai glTF: ≤ 300 KB, kompresi **Meshopt/Draco**, tekstur KTX2/WebP ≤ 512 px. Prosedural lebih disukai.
-- Interaksi: parallax kursor halus (lerp), **tidak** menangkap scroll/gesture (jangan `OrbitControls` di mobile).
-  `touch-action: pan-y` agar scroll halaman tetap berfungsi.
+Semua gambar berasal dari frame video yang sama. Alt text menjelaskan bahwa itu
+ilustrasi 3D, bukan foto kegiatan.
 
-## 4. Kapan 3D dirender (`useCanRender3D`)
-Render **hanya jika semua** terpenuhi:
-- WebGL tersedia (uji `canvas.getContext('webgl2'|'webgl')` dalam try/catch)
-- `prefers-reduced-motion: no-preference`
-- `navigator.connection?.saveData !== true` dan `effectiveType` bukan `2g/3g` (bila API tersedia)
-- Lebar viewport ≥ 768 px **atau** perangkat mobile dengan `hardwareConcurrency ≥ 6` (default: mobile = poster)
-- `navigator.deviceMemory` (bila ada) ≥ 4
-- Tab terlihat
-Jika tidak → tampilkan **poster**: gambar WebP/AVIF ≤ 60 KB (render dari scene yang sama) atau SVG/CSS gradien,
-dengan dimensi tetap (tanpa CLS). Poster juga dipakai sebagai placeholder selama chunk 3D dimuat.
+## 3. Implementasi
+- `frontend/src/components/HeroVisual.tsx` memakai elemen video native:
+  `<video autoPlay loop muted playsInline preload="metadata" poster=...>`.
+- Tombol "Jeda animasi"/"Putar animasi" tersedia. Video dijeda saat tab tersembunyi
+  atau elemen keluar viewport (`IntersectionObserver`) dan dilanjutkan saat terlihat.
+- `prefers-reduced-motion: reduce` → video tidak autoplay, poster tampil, pengguna
+  bisa menekan "Putar animasi".
+- Video dekoratif: `aria-hidden="true"`, `tabIndex={-1}`, tanpa audio, tanpa kontrol
+  pemutar bawaan.
+- **Tidak ada `three`/R3F di runtime.** Dependency 3D sudah dihapus dari proyek.
+- Poster dan gambar berita memakai `Picture`/`img` dengan `width`, `height`, `alt`,
+  `loading="lazy"`, dan `decoding="async"`.
 
-## 5. Ketahanan
-- `ErrorBoundary` di sekitar canvas: error WebGL/context lost → otomatis poster, tanpa crash halaman.
-- Tangani `webglcontextlost`/`restored`. Bersihkan geometri/material/tekstur saat unmount (`dispose`).
-- Konten hero (H1, CTA) **di luar** canvas dan dapat dibaca screen reader; canvas diberi `aria-hidden="true"`.
-- Tombol "Jeda animasi" kecil (aksesibel) untuk pengguna yang ingin menghentikan gerak.
+## 4. Budget
+| Item | Target | Terukur |
+|---|---|---|
+| Video hero | ≤ 1 MB | 474 KB |
+| Poster hero | ≤ 100 KB | 42 KB |
+| Gambar berita (3) | ≤ 150 KB | 85 KB |
+| Panel pengumuman | ≤ 50 KB | 15 KB |
+| Chunk 3D | tidak ada | 0 KB |
+| JS awal (gzip) | ≤ 180 KB | 96,7 KB |
 
-## 6. Budget & verifikasi
-| Item | Batas |
-|---|---|
-| Chunk 3D (gzip, tanpa model) | ≤ 200 KB |
-| Aset 3D tambahan | ≤ 300 KB |
-| Dampak ke LCP/CLS | 0 (3D tak boleh jadi elemen LCP; poster yang jadi LCP) |
-| Frame rate | ≥ 50 fps di laptop menengah; turun otomatis (DPR 1, kurangi objek) bila rata-rata < 40 fps selama 2 detik |
-| Total Blocking Time akibat 3D | ≤ 50 ms |
-Verifikasi: Lighthouse (mobile & desktop) **dengan dan tanpa** 3D, Performance panel, `rollup-plugin-visualizer`.
-Jika melanggar → kecilkan scene, **jangan** longgarkan budget.
+## 5. Aksesibilitas & ketahanan
+- Konten hero (H1, CTA) berada di luar video dan dapat dibaca screen reader.
+- Tombol jeda berlabel Indonesia dan punya `aria-pressed`.
+- `poster` memastikan tidak ada kotak kosong sebelum video dimuat.
+- Tidak ada error konsol saat load; jika video gagal, poster tetap tampil.
 
-## 7. Akseptasi
-- [ ] Beranda memuat & interaktif tanpa menunggu 3D.
-- [ ] Poster tampil pada mobile, reduced-motion, saveData, dan tanpa WebGL.
-- [ ] Tidak ada error konsol saat context lost.
-- [ ] Bundle awal tidak mengandung `three`.
+## 6. Peta footer
+- Google Maps embed: `https://www.google.com/maps?q=-6.2912708,106.7051347&z=17&output=embed`.
+- `loading="lazy"`, `title="Peta lokasi Universitas Ichsan Satya"`,
+  `referrerpolicy="no-referrer-when-downgrade"`, `allowfullscreen`, rasio 4:3.
+- Tautan "Buka di Google Maps" memakai `ExternalLink` sehingga otomatis
+  `rel="noopener noreferrer"` dan teks SR "membuka tab baru".
+- Jika nanti CSP dipasang, tambahkan `frame-src https://www.google.com`.
+
+## 7. Verifikasi
+- [x] Video autoplay, muted, loop, durasi 10 detik, lebar 800 px.
+- [x] Reduced-motion menampilkan poster, bukan video bergerak.
+- [x] Tidak ada error konsol saat load.
+- [x] Bundle awal tidak mengandung `three` (dependency 3D dihapus).
+- [x] Peta footer ter-render dan tautan Maps bekerja.

@@ -18,7 +18,7 @@ export function ThemeToggle() {
       onClick={() => setThemePref(next)}
       aria-label={`Tema saat ini: ${labels[pref]}. Ganti ke tema ${labels[next]}.`}
       title={`Tema: ${labels[pref]}`}
-      className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-line bg-surface px-3 text-sm font-semibold text-muted transition-colors hover:border-brand-500 hover:text-brand-600"
+      className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-muted transition-colors hover:border-brand-500 hover:text-brand-600"
     >
       <svg
         aria-hidden="true"

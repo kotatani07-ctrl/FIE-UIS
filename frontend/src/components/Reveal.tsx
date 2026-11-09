@@ -1,8 +1,17 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+function initiallyVisible(): boolean {
+  if (typeof window === "undefined") {
+    return true;
+  }
+  const reducedMotion =
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+  return reducedMotion || typeof IntersectionObserver === "undefined";
+}
+
 /**
- * Membuka konten dengan animasi saat memasuki viewport. Fallback ke keadaan
- * terlihat bila IntersectionObserver tidak tersedia atau saat reduced-motion.
+ * Mengangkat konten sedikit saat masuk viewport. Dipakai satu kali per section,
+ * bukan per elemen, dan langsung terlihat saat reduced-motion aktif.
  */
 export function Reveal({
   children,
@@ -14,12 +23,14 @@ export function Reveal({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(initiallyVisible);
 
   useEffect(() => {
+    if (visible) {
+      return;
+    }
     const node = ref.current;
-    if (!node || typeof IntersectionObserver === "undefined") {
-      setVisible(true);
+    if (!node) {
       return;
     }
     const observer = new IntersectionObserver(
@@ -31,11 +42,15 @@ export function Reveal({
           }
         }
       },
-      { rootMargin: "0px 0px -8% 0px", threshold: 0.05 },
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.08 },
     );
     observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
+    const fallback = window.setTimeout(() => setVisible(true), 3000);
+    return () => {
+      window.clearTimeout(fallback);
+      observer.disconnect();
+    };
+  }, [visible]);
 
   return (
     <div

@@ -1,0 +1,38 @@
+{% load i18n %}
+
+{% if app_list %}
+  <div class="fie-app-grid">
+    {% for app in app_list %}
+      <section class="fie-app-card">
+        <header class="fie-app-card-head">
+          <span class="fie-app-card-icon">{% include "admin/_nav_icon.html" with name=app.app_label %}</span>
+          <div>
+            <h2>{{ app.name }}</h2>
+            <p>{{ app.models|length }} menu pengelolaan</p>
+          </div>
+        </header>
+        <ul class="fie-app-list">
+          {% for model in app.models %}
+            <li class="fie-app-row">
+              {% if model.admin_url %}
+                <a href="{{ model.admin_url }}" class="fie-app-link">{{ model.name }}</a>
+              {% else %}
+                <span class="fie-app-link">{{ model.name }}</span>
+              {% endif %}
+              <span class="fie-app-actions">
+                {% if model.add_url %}
+                  <a href="{{ model.add_url }}" class="fie-app-add">Tambah</a>
+                {% endif %}
+                {% if show_changelinks and model.admin_url %}
+                  <a href="{{ model.admin_url }}" class="fie-app-open">Buka</a>
+                {% endif %}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="fie-empty">Anda tidak memiliki izin untuk melihat atau mengubah apa pun.</p>
+{% endif %}

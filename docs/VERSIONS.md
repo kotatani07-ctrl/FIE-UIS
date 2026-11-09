@@ -1,6 +1,6 @@
 # Versi teknologi
 
-Versi berikut diverifikasi pada 3 November 2026 melalui metadata npm dan PyPI.
+Versi berikut diverifikasi pada 4 November 2026 melalui metadata npm dan PyPI.
 Versi JavaScript dikunci persis di `frontend/package.json` dan `package-lock.json`;
 versi Python dikunci di file requirements. Perbarui lockfile ketika menaikkan versi.
 
@@ -18,6 +18,10 @@ versi Python dikunci di file requirements. Perbarui lockfile ketika menaikkan ve
 | FE | Runtime lokal | Node.js 24.22.1 / npm 12.2.1 |
 | BE | Django (jalur LTS 5.2) | 5.2.18 |
 | BE | Django REST Framework | 3.18.3 |
+| BE | `django-cors-headers` | 4.9.0 |
+| BE | `django-filter` | 26.2 |
+| BE | `django-redis` | 7.0.0 |
+| BE | `drf-spectacular` | 0.30.0 |
 | BE | psycopg | 3.3.7 |
 | BE | Runtime lokal | Python 3.13.5 |
 | DB | PostgreSQL (Docker development) | 16 |
@@ -32,6 +36,10 @@ belum dapat diuji sampai akses daemon diberikan.
 
 Versi lint/test JavaScript dan paket backend pendukung juga dipatok persis di
 manifest/requirements yang sesuai.
+
+Hero memakai video loop `frontend/asset/economy-loop.mp4` (800x600, 10 detik,
+474 KB) dan poster 42 KB. Dependency `three`/R3F tidak dipakai dan sudah dihapus.
+Hasil build terakhir: JS awal 96,7 KB gzip; tidak ada chunk 3D.
 
 ESLint 9.39.5 dipilih karena `eslint-plugin-jsx-a11y` versi terbaru yang
 diverifikasi masih membatasi peer dependency sampai ESLint 9. npm menandai ESLint

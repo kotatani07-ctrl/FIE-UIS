@@ -1,0 +1,56 @@
+{% load i18n %}
+{% url 'admin:index' as admin_index_url %}
+
+<button class="toggle-nav-sidebar" id="toggle-nav-sidebar" aria-label="{% translate 'Toggle navigation' %}"></button>
+
+<nav id="nav-sidebar" class="fie-sidebar" aria-label="Navigasi admin">
+  <div class="fie-sidebar-head">
+    <p class="fie-sidebar-eyebrow">Ruang kerja</p>
+    <p class="fie-sidebar-title">Konten fakultas</p>
+  </div>
+
+  <div class="fie-sidebar-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+    <label class="visually-hidden" for="nav-filter">Cari menu</label>
+    <input type="search" id="nav-filter" placeholder="Cari menu..." autocomplete="off">
+  </div>
+
+  <div class="fie-sidebar-scroll">
+    <a href="{{ admin_index_url }}" class="fie-nav-link fie-nav-home{% if request.path == admin_index_url %} is-active{% endif %}"{% if request.path == admin_index_url %} aria-current="page"{% endif %}>
+      <span class="fie-nav-home-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2Z"/></svg>
+      </span>
+      <span>Dashboard</span>
+    </a>
+
+    {% for app in available_apps %}
+      <section class="fie-nav-group" data-nav-group>
+        <p class="fie-nav-group-label">
+          <span class="fie-nav-group-icon">{% include "admin/_nav_icon.html" with name=app.app_label %}</span>
+          <span>{{ app.name }}</span>
+        </p>
+        <ul class="fie-nav-list">
+          {% for model in app.models %}
+            {% if model.admin_url %}
+              <li>
+                <a href="{{ model.admin_url }}" class="fie-nav-link{% if model.admin_url in request.path %} is-active{% endif %}"{% if model.admin_url in request.path %} aria-current="page"{% endif %}>
+                  <span class="fie-nav-dot" aria-hidden="true"></span>
+                  <span class="fie-nav-label">{{ model.name }}</span>
+                </a>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </section>
+    {% empty %}
+      <p class="fie-nav-empty">Tidak ada menu yang tersedia.</p>
+    {% endfor %}
+  </div>
+
+  <div class="fie-sidebar-foot">
+    <a href="{% url 'admin:index' %}" class="fie-sidebar-foot-link">
+      <span class="fie-status-dot" aria-hidden="true"></span>
+      <span>Sistem siap digunakan</span>
+    </a>
+  </div>
+</nav>

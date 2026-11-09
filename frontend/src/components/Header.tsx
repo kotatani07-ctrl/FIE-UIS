@@ -1,26 +1,34 @@
 import { useEffect, useRef, useState } from "react";
+import { Link, NavLink } from "react-router-dom";
+import { routes } from "@/app/routes";
 import { navigation, site } from "@/lib/site";
+import { BrandLogo } from "./BrandLogo";
 import { ThemeToggle } from "./ThemeToggle";
 import { Container, LinkButton } from "./ui";
 
 const FOCUSABLE = "a[href], button:not([disabled])";
 
-function Logo() {
-  return (
-    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 font-display text-sm font-bold text-white">
-      FIE
-    </span>
-  );
-}
+const navItemClass = ({ isActive }: { isActive: boolean }) =>
+  `group relative inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-2.5 text-sm font-semibold transition-[color,background-color,transform] duration-200 hover:-translate-y-0.5 hover:bg-surface-2 focus-visible:bg-surface-2 ${
+    isActive ? "text-brand-700" : "text-muted hover:text-ink"
+  }`;
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
 
   useEffect(() => {
     if (!open) {
+      if (wasOpen.current) {
+        triggerRef.current?.focus();
+      }
+      wasOpen.current = false;
       return;
     }
+    wasOpen.current = true;
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -67,71 +75,84 @@ export function Header() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-50">
-      <div className="bg-brand-900 py-2 text-center text-xs text-white/90">
-        Pratinjau pengembangan — sebagian konten masih berupa data contoh.
-      </div>
-
-      <div className="border-b border-line/70 bg-surface/80 backdrop-blur">
-        <Container className="flex items-center justify-between gap-4 py-3">
-          <a href="#beranda" className="flex items-center gap-3">
-            <Logo />
-            <span className="flex flex-col leading-tight">
-              <span className="font-display text-base font-bold text-ink">
-                {site.facultyName}
-              </span>
-              <span className="text-xs text-muted">{site.universityName}</span>
+    <header className="sticky top-0 z-50 border-b border-line/70 bg-surface/90 backdrop-blur">
+      <Container className="flex items-center justify-between gap-4 py-3">
+        <Link
+          to={routes.home}
+          className="flex items-center gap-3 transition-transform duration-200 hover:-translate-y-0.5"
+        >
+          <BrandLogo className="h-12 w-14 shrink-0 rounded-lg bg-white p-1" />
+          <span className="flex flex-col leading-tight">
+            <span className="font-display text-base font-bold text-ink">
+              {site.facultyName}
             </span>
-          </a>
+            <span className="text-xs text-muted">{site.universityName}</span>
+          </span>
+        </Link>
 
-          <nav aria-label="Navigasi utama" className="hidden lg:block">
-            <ul className="flex items-center gap-0.5">
-              {navigation.map((item) => (
-                <li key={item.href}>
-                  <a
-                    href={item.href}
-                    className="inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-2.5 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-ink"
-                  >
-                    {item.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+        <nav aria-label="Navigasi utama" className="hidden lg:block">
+          <ul className="flex items-center gap-1">
+            {navigation.map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  end={item.to === routes.home}
+                  className={navItemClass}
+                >
+                  {({ isActive }) => (
+                    <>
+                      {item.label}
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none absolute inset-x-2.5 bottom-1.5 h-0.5 origin-left rounded-full bg-accent-400 transition-transform duration-200 ${
+                          isActive
+                            ? "scale-x-100"
+                            : "scale-x-0 group-hover:scale-x-100 group-focus:scale-x-100 group-focus-visible:scale-x-100"
+                        }`}
+                      />
+                    </>
+                  )}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <LinkButton href="#kontak" className="max-sm:hidden">
-              Daftar Sekarang
-            </LinkButton>
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              aria-expanded={open}
-              aria-controls="menu-mobile"
-              aria-label="Buka menu navigasi"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-line bg-surface text-ink lg:hidden"
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
-              </svg>
-            </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <div className="hidden xl:block">
+            <LinkButton to={routes.contact}>Informasi Pendaftaran</LinkButton>
           </div>
-        </Container>
-      </div>
+          <button
+            ref={triggerRef}
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-expanded={open}
+            aria-controls="menu-mobile"
+            aria-label="Buka menu navigasi"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-surface text-ink transition-colors hover:border-brand-500 lg:hidden"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+      </Container>
 
       {open ? (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-brand-900/50"
-            aria-hidden="true"
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default bg-brand-900/50"
+            aria-label="Tutup menu navigasi"
+            onClick={() => setOpen(false)}
           />
           <div
             ref={drawerRef}
@@ -152,7 +173,7 @@ export function Header() {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Tutup menu navigasi"
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-line text-ink"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-line text-ink"
               >
                 <svg
                   aria-hidden="true"
@@ -170,26 +191,26 @@ export function Header() {
             <nav aria-label="Navigasi mobile" className="mt-6">
               <ul className="flex flex-col gap-1">
                 {navigation.map((item) => (
-                  <li key={item.href}>
-                    <a
-                      href={item.href}
+                  <li key={item.to}>
+                    <Link
+                      to={item.to}
                       onClick={() => setOpen(false)}
-                      className="block rounded-xl px-4 py-3 text-base font-semibold text-ink transition-colors hover:bg-surface-2"
+                      className="block rounded-lg px-4 py-3 text-base font-semibold text-ink transition-colors hover:bg-surface-2"
                     >
                       {item.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
             </nav>
 
-            <a
-              href="#kontak"
+            <Link
+              to={routes.contact}
               onClick={() => setOpen(false)}
-              className="mt-auto inline-flex min-h-11 items-center justify-center rounded-full bg-brand-600 px-5 text-sm font-semibold text-white"
+              className="mt-auto inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
             >
-              Daftar Sekarang
-            </a>
+              Informasi Pendaftaran
+            </Link>
           </div>
         </div>
       ) : null}
