@@ -1,9 +1,10 @@
+import logging
+
 from django.core.files.storage import default_storage
 from django.core.validators import RegexValidator
 from django.urls import reverse
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
-from rest_framework.exceptions import APIException
 
 from apps.academics.models import StudyProgram
 from apps.content.models import HeroSlide, Partner, StaticPage
@@ -13,6 +14,8 @@ from apps.downloads.models import DownloadItem
 from apps.events.models import Event
 from apps.news.models import Announcement, NewsCategory, NewsPost, Tag
 from apps.research.models import ResearchItem
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema_field(
@@ -309,13 +312,23 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
 
 class AnnouncementDetailSerializer(AnnouncementListSerializer):
     body_html = serializers.SerializerMethodField()
+    attachment_url = serializers.SerializerMethodField()
 
     class Meta(AnnouncementListSerializer.Meta):
-        fields = AnnouncementListSerializer.Meta.fields + ("body_html",)
+        fields = AnnouncementListSerializer.Meta.fields + (
+            "body_html",
+            "attachment_url",
+        )
 
     @extend_schema_field(serializers.CharField())
     def get_body_html(self, instance):
         return sanitize_html(instance.body)
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_attachment_url(self, instance):
+        if not instance.attachment:
+            return None
+        return reverse("announcement-attachment", kwargs={"pk": instance.pk})
 
 
 class EventListSerializer(serializers.ModelSerializer):
@@ -347,6 +360,7 @@ class EventDetailSerializer(EventListSerializer):
 
 class ResearchSerializer(serializers.ModelSerializer):
     type = serializers.CharField(source="kind", read_only=True)
+    file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = ResearchItem
@@ -358,7 +372,14 @@ class ResearchSerializer(serializers.ModelSerializer):
             "year",
             "abstract",
             "external_url",
+            "file_url",
         )
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_file_url(self, instance):
+        if not instance.file:
+            return None
+        return reverse("research-file", kwargs={"pk": instance.pk})
 
 
 class DownloadSerializer(serializers.ModelSerializer):
@@ -430,7 +451,8 @@ def serialize_image(value, instance, alt_field, media_assets):
     if asset is None:
         asset = MediaAsset.objects.filter(file=value.name).first()
     if asset is None:
-        raise APIException("Metadata gambar tidak tersedia.")
+        logger.warning("Missing MediaAsset metadata for %s", value.name)
+        return None
 
     alt = getattr(instance, alt_field, "") if alt_field else ""
     alt = alt or getattr(instance, "title", "") or getattr(instance, "name", "")

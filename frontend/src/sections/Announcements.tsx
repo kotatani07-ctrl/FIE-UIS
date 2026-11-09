@@ -10,7 +10,7 @@ import { announcementCard } from "@/lib/content";
 import announcementVisual from "../../asset/announcement-visual.jpg";
 
 export function Announcements() {
-  const { data, isPending, isError, refetch } = useAnnouncements(4);
+  const { data, isPending, isError, refetch } = useAnnouncements(1, 4);
   const items = (data?.results ?? []).map(announcementCard);
 
   return (

@@ -7,7 +7,9 @@ from apps.core.admin_views import admin_dashboard_data
 from apps.core.api.exceptions import api_not_found, api_server_error
 from apps.core.api.views import (
     HealthView,
+    announcement_attachment,
     download_file,
+    research_file,
     robots_txt,
     rss_xml,
     security_txt,
@@ -30,6 +32,12 @@ urlpatterns = [
     path("api/v1/", include("apps.core.api.urls")),
     path("health/", HealthView.as_view(), name="health"),
     path("files/download/<int:pk>/", download_file, name="download-file"),
+    path(
+        "files/announcement/<int:pk>/",
+        announcement_attachment,
+        name="announcement-attachment",
+    ),
+    path("files/research/<int:pk>/", research_file, name="research-file"),
     path("sitemap.xml", sitemap_xml, name="sitemap"),
     path("robots.txt", robots_txt, name="robots"),
     path("rss.xml", rss_xml, name="rss"),

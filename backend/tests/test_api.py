@@ -393,6 +393,50 @@ def test_announcement_expiry_and_event_time_filters():
 
 
 @pytest.mark.django_db
+def test_expired_announcements_are_hidden_from_sitemap_and_seo():
+    create_announcement(
+        slug="pengumuman-kedaluwarsa",
+        expires_at=timezone.now() - timedelta(days=1),
+    )
+    client = APIClient()
+
+    sitemap = client.get("/sitemap.xml")
+    seo = client.get("/seo/informasi/pengumuman/pengumuman-kedaluwarsa")
+
+    assert b"pengumuman-kedaluwarsa" not in sitemap.content
+    assert seo.status_code == 404
+
+
+@pytest.mark.django_db
+def test_duplicate_titles_get_unique_slugs():
+    def make_post():
+        return NewsPost.objects.create(
+            kind=NewsPost.Kind.NEWS,
+            title="Judul Sama",
+            excerpt="Ringkasan.",
+            body="<p>Isi berita dengan teks yang cukup.</p>",
+            author_name="Humas",
+        )
+
+    first = make_post()
+    second = make_post()
+
+    assert first.slug == "judul-sama"
+    assert second.slug == "judul-sama-2"
+
+
+@pytest.mark.django_db
+def test_news_list_tolerates_missing_image_metadata():
+    post = create_news(slug="tanpa-metadata")
+    NewsPost.objects.filter(pk=post.pk).update(cover="news/missing.jpg")
+
+    response = APIClient().get("/api/v1/news/")
+
+    assert response.status_code == 200
+    assert response.data["results"][0]["cover"] is None
+
+
+@pytest.mark.django_db
 def test_research_filter_and_download_list_use_public_fields():
     ResearchItem.objects.create(
         title="Kajian perpajakan",
@@ -445,6 +489,53 @@ def test_download_file_is_served_as_attachment(tmp_path):
 
 
 @pytest.mark.django_db
+def test_announcement_attachment_and_research_file_are_downloadable(tmp_path):
+    with override_settings(MEDIA_ROOT=tmp_path):
+        announcement = Announcement.objects.create(
+            title="Pengumuman file",
+            slug="pengumuman-file",
+            body="<p>Isi pengumuman dengan lampiran.</p>",
+            attachment=SimpleUploadedFile(
+                "info.pdf", b"info", content_type="application/pdf"
+            ),
+            status="published",
+            published_at=timezone.now() - timedelta(minutes=1),
+        )
+        research = ResearchItem.objects.create(
+            title="Riset file",
+            slug="riset-file",
+            kind=ResearchItem.Kind.RESEARCH,
+            authors="Dosen",
+            year=2026,
+            abstract="Abstrak riset.",
+            file=SimpleUploadedFile(
+                "paper.pdf", b"paper", content_type="application/pdf"
+            ),
+            status="published",
+            published_at=timezone.now() - timedelta(minutes=1),
+        )
+        client = APIClient()
+
+        attachment = client.get(f"/files/announcement/{announcement.pk}/")
+        paper = client.get(f"/files/research/{research.pk}/")
+        detail = client.get(f"/api/v1/announcements/{announcement.slug}/")
+        listing = client.get("/api/v1/research/")
+
+        assert attachment.status_code == 200
+        assert b"".join(attachment.streaming_content) == b"info"
+        attachment.close()
+        assert paper.status_code == 200
+        assert b"".join(paper.streaming_content) == b"paper"
+        paper.close()
+        assert detail.data["attachment_url"] == (
+            f"/files/announcement/{announcement.pk}/"
+        )
+        assert listing.data["results"][0]["file_url"] == (
+            f"/files/research/{research.pk}/"
+        )
+
+
+@pytest.mark.django_db
 def test_unknown_api_route_uses_uniform_json_404():
     with override_settings(DEBUG=False):
         response = APIClient().get("/api/v1/unknown/")
@@ -472,7 +563,7 @@ def test_global_search_returns_public_results():
     assert response.status_code == 200
     assert response.data["count"] == 1
     assert response.data["results"][0]["type"] == "berita"
-    assert response.data["results"][0]["url"] == "/informasi/berita/pajak"
+    assert response.data["results"][0]["url"] == "/informasi/berita"
 
 
 @pytest.mark.django_db
@@ -704,7 +795,9 @@ def test_health_and_seo_endpoints_return_expected_types():
     assert health.status_code == 200
     assert health.json() == {"status": "ok"}
     assert sitemap["Content-Type"].startswith("application/xml")
-    assert b"/profil/sejarah" in sitemap.content
+    assert b"/prodi" in sitemap.content
+    assert b"/kontak" in sitemap.content
+    assert b"/profil/sejarah" not in sitemap.content
     assert robots["Content-Type"].startswith("text/plain")
     assert b"Sitemap:" in robots.content
     assert seo.status_code == 200
@@ -720,7 +813,8 @@ def test_rss_endpoint_returns_well_formed_feed():
     assert response.status_code == 200
     assert response["Content-Type"].startswith("application/rss+xml")
     assert b"<item>" in response.content
-    assert b"/informasi/berita/rss" in response.content
+    assert b"fie:news:rss" in response.content
+    assert b"/informasi/berita" in response.content
 
 
 @pytest.mark.django_db

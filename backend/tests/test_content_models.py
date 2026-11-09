@@ -81,7 +81,17 @@ def test_site_settings_reject_non_google_map_embed_hosts() -> None:
 
 @pytest.mark.django_db
 def test_editor_can_publish_distinct_titles_but_not_duplicate_live_titles() -> None:
-    existing = NewsPost.objects.create(
+    NewsPost.objects.create(
+        kind=NewsPost.Kind.ARTICLE,
+        title="Informasi akademik terbaru",
+        slug="draf-informasi-akademik",
+        excerpt="Ringkasan",
+        body="<p>Isi yang cukup panjang untuk menjelaskan informasi penting kepada warga "
+        "fakultas secara lengkap dan dapat dipahami oleh semua pembaca situs.</p>",
+        author_name="Humas",
+        status=NewsPost.Status.DRAFT,
+    )
+    existing = NewsPost(
         kind=NewsPost.Kind.ARTICLE,
         title="Informasi akademik terbaru",
         excerpt="Ringkasan",
@@ -94,6 +104,8 @@ def test_editor_can_publish_distinct_titles_but_not_duplicate_live_titles() -> N
         meta_description="Deskripsi SEO yang cukup panjang untuk memenuhi batas karakter "
         "minimal serta menjelaskan isi tulisan kepada calon pembaca situs.",
     )
+    existing.full_clean()
+    existing.save()
     duplicate = NewsPost(
         kind=NewsPost.Kind.ARTICLE,
         title=existing.title,

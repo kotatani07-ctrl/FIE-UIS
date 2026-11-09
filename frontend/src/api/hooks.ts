@@ -5,7 +5,6 @@ import {
   announcementSchema,
   categorySchema,
   eventSchema,
-  heroSlideSchema,
   newsItemSchema,
   paginatedSchema,
   programSchema,
@@ -33,9 +32,6 @@ export function useApiQuery<TSchema extends z.ZodType>(
 
 export const useSiteSettings = () =>
   useApiQuery(["site"], "site/", siteSettingsSchema);
-
-export const useHeroSlides = () =>
-  useApiQuery(["hero-slides"], "hero-slides/", heroSlideSchema.array());
 
 export const useFeaturedNews = () =>
   useApiQuery(["news", "featured"], "news/featured/", newsItemSchema.array());
@@ -74,16 +70,26 @@ export const useEventsList = (
   );
 };
 
-export const useAnnouncements = (pageSize = 12) =>
-  useApiQuery(
-    ["announcements", pageSize],
-    `announcements/?page_size=${pageSize}`,
+export const useAnnouncements = (page = 1, pageSize = 12) => {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize),
+  });
+  return useApiQuery(
+    ["announcements", page, pageSize],
+    `announcements/?${params.toString()}`,
     paginatedSchema(announcementSchema),
   );
+};
 
-export const usePrograms = () =>
-  useApiQuery(
-    ["programs"],
-    "programs/?page_size=50",
+export const usePrograms = (page = 1, pageSize = 50) => {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize),
+  });
+  return useApiQuery(
+    ["programs", page, pageSize],
+    `programs/?${params.toString()}`,
     paginatedSchema(programSchema),
   );
+};

@@ -90,6 +90,12 @@ from apps.research.models import ResearchItem
 logger = logging.getLogger(__name__)
 
 
+def live_announcements():
+    return Announcement.live_queryset().filter(
+        Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+    )
+
+
 class ServiceUnavailable(APIException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     default_detail = "Layanan sementara tidak tersedia."
@@ -244,12 +250,7 @@ class AnnouncementViewSet(PublicReadOnlyViewSet):
     search_fields = ("title", "body")
 
     def get_queryset(self):
-        now = timezone.now()
-        return (
-            Announcement.live_queryset()
-            .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now))
-            .order_by("-is_pinned", "-published_at", "-id")
-        )
+        return live_announcements().order_by("-is_pinned", "-published_at", "-id")
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -377,7 +378,7 @@ class SearchView(APIView):
         )
 
         announcements = (
-            Announcement.live_queryset()
+            live_announcements()
             .filter(Q(title__icontains=query) | Q(body__icontains=query))
             .order_by("-published_at", "-id")[:100]
         )
@@ -429,15 +430,13 @@ class HealthView(APIView):
         return Response({"status": "ok"})
 
 
-@require_GET
-def download_file(request, pk):
-    item = get_object_or_404(DownloadItem, pk=pk, is_active=True)
+def _download_response(file_field):
+    raw_filename = Path(file_field.name).name
     try:
-        uploaded_file = item.file.open("rb")
-    except (FileNotFoundError, OSError):
-        logger.error("Published download is missing from storage (id=%s)", item.pk)
+        uploaded_file = file_field.open("rb")
+    except (FileNotFoundError, OSError, ValueError):
+        logger.error("Published file is missing from storage (name=%s)", raw_filename)
         return HttpResponseNotFound("Berkas tidak ditemukan.")
-    raw_filename = Path(item.file.name).name
     filename = f"{slugify(Path(raw_filename).stem)}{Path(raw_filename).suffix.lower()}"
     response = FileResponse(
         uploaded_file,
@@ -447,6 +446,24 @@ def download_file(request, pk):
     )
     response["X-Content-Type-Options"] = "nosniff"
     return response
+
+
+@require_GET
+def download_file(request, pk):
+    item = get_object_or_404(DownloadItem, pk=pk, is_active=True)
+    return _download_response(item.file)
+
+
+@require_GET
+def announcement_attachment(request, pk):
+    item = get_object_or_404(live_announcements().exclude(attachment=""), pk=pk)
+    return _download_response(item.attachment)
+
+
+@require_GET
+def research_file(request, pk):
+    item = get_object_or_404(ResearchItem.live_queryset().exclude(file=""), pk=pk)
+    return _download_response(item.file)
 
 
 class ContactView(APIView):
@@ -617,30 +634,14 @@ def sitemap_xml(request):
     root = ElementTree.Element(
         "urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
     )
-    paths = [""]
-    paths.extend(
-        f"profil/{key}"
-        for key in StaticPage.live_queryset().values_list("key", flat=True)
-    )
-    paths.extend(
-        f"prodi/{slug}"
-        for slug in StudyProgram.live_queryset().values_list("slug", flat=True)
-    )
-    paths.extend(
-        f"informasi/berita/{slug}"
-        for slug in NewsPost.live_queryset().values_list("slug", flat=True)
-    )
-    paths.extend(
-        f"informasi/pengumuman/{slug}"
-        for slug in Announcement.live_queryset().values_list("slug", flat=True)
-    )
-    paths.extend(
-        f"informasi/agenda/{slug}"
-        for slug in Event.live_queryset().values_list("slug", flat=True)
-    )
-    paths.extend(
-        f"riset/{kind}/{slug}"
-        for kind, slug in ResearchItem.live_queryset().values_list("kind", "slug")
+    # Detail routes ship in Phase 4; list only pages the frontend can serve.
+    paths = (
+        "",
+        "prodi",
+        "informasi/berita",
+        "informasi/agenda",
+        "informasi/pengumuman",
+        "kontak",
     )
     for path in paths:
         item = ElementTree.SubElement(root, "url")
@@ -670,13 +671,16 @@ def rss_xml(request):
         channel, "description"
     ).text = "Berita dan artikel Fakultas Ilmu Ekonomi."
     posts = NewsPost.live_queryset().order_by("-published_at", "-id")[:50]
+    news_list = urljoin(
+        settings.FRONTEND_BASE_URL.rstrip("/") + "/", "informasi/berita"
+    )
     for post in posts:
         item = ElementTree.SubElement(channel, "item")
         ElementTree.SubElement(item, "title").text = post.title
-        path = f"/informasi/berita/{post.slug}"
-        link = urljoin(settings.FRONTEND_BASE_URL.rstrip("/") + "/", path.lstrip("/"))
-        ElementTree.SubElement(item, "link").text = link
-        ElementTree.SubElement(item, "guid").text = link
+        # Detail routes ship in Phase 4; point readers at the list for now.
+        ElementTree.SubElement(item, "link").text = news_list
+        guid = ElementTree.SubElement(item, "guid", isPermaLink="false")
+        guid.text = f"fie:news:{post.slug}"
         ElementTree.SubElement(item, "description").text = post.excerpt
         if post.published_at:
             ElementTree.SubElement(item, "pubDate").text = format_datetime(
@@ -711,7 +715,7 @@ def _seo_record(path):
         record = NewsPost.live_queryset().filter(slug=parts[2]).first()
         body = record.body if record else ""
     elif len(parts) == 3 and parts[:2] == ["informasi", "pengumuman"]:
-        record = Announcement.live_queryset().filter(slug=parts[2]).first()
+        record = live_announcements().filter(slug=parts[2]).first()
         body = record.body if record else ""
     elif len(parts) == 3 and parts[:2] == ["informasi", "agenda"]:
         record = Event.live_queryset().filter(slug=parts[2]).first()
@@ -786,18 +790,19 @@ def security_txt(request):
 
 
 def search_item(kind, slug, title, summary):
-    url_prefixes = {
-        "berita": f"/informasi/berita/{slug}",
-        "pengumuman": f"/informasi/pengumuman/{slug}",
-        "agenda": f"/informasi/agenda/{slug}",
-        "prodi": f"/prodi/{slug}",
-        "halaman": f"/profil/{slug}",
+    # Detail routes ship in Phase 4; keep result URLs on existing list pages.
+    url_by_kind = {
+        "berita": "/informasi/berita",
+        "pengumuman": "/informasi/pengumuman",
+        "agenda": "/informasi/agenda",
+        "prodi": "/prodi",
+        "halaman": "/",
     }
     return {
         "type": kind,
         "slug": slug,
         "title": title,
-        "url": url_prefixes[kind],
+        "url": url_by_kind[kind],
         "excerpt": summary,
     }
 

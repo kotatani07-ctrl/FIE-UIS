@@ -3,14 +3,20 @@ import { ListEmpty, ListError, LoadingBlock } from "@/components/ListFeedback";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { ProgramList } from "@/components/ProgramList";
-import { Container } from "@/components/ui";
+import { Container, Pagination } from "@/components/ui";
 import { routes } from "@/app/routes";
 import { programCard } from "@/lib/content";
 import { site } from "@/lib/site";
+import { useSearchParams } from "react-router-dom";
+
+const PAGE_SIZE = 50;
 
 export function ProgramsPage() {
-  const { data, isPending, isError, refetch } = usePrograms();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const { data, isPending, isError, refetch } = usePrograms(page, PAGE_SIZE);
   const programs = (data?.results ?? []).map(programCard);
+  const totalPages = Math.max(1, Math.ceil((data?.count ?? 0) / PAGE_SIZE));
 
   return (
     <PageShell
@@ -37,7 +43,24 @@ export function ProgramsPage() {
             description="Program studi akan tampil di sini setelah diterbitkan."
           />
         ) : (
-          <ProgramList items={programs} />
+          <>
+            <ProgramList items={programs} />
+            <div className="mt-10">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={(next) => {
+                  const params = new URLSearchParams(searchParams);
+                  if (next <= 1) {
+                    params.delete("page");
+                  } else {
+                    params.set("page", String(next));
+                  }
+                  setSearchParams(params);
+                }}
+              />
+            </div>
+          </>
         )}
       </Container>
     </PageShell>

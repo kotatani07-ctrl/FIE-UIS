@@ -14,7 +14,10 @@ const PAGE_SIZE = 12;
 export function AnnouncementsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const { data, isPending, isError, refetch } = useAnnouncements(PAGE_SIZE);
+  const { data, isPending, isError, refetch } = useAnnouncements(
+    page,
+    PAGE_SIZE,
+  );
   const items = (data?.results ?? []).map(announcementCard);
   const totalPages = Math.max(1, Math.ceil((data?.count ?? 0) / PAGE_SIZE));
 

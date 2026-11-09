@@ -16,8 +16,6 @@ function useDashboardData(url: string) {
     async (signal?: AbortSignal, background = false) => {
       if (background) {
         setRefreshing(true);
-      } else {
-        setState("loading");
       }
       try {
         const response = await fetch(url, {
@@ -47,7 +45,7 @@ function useDashboardData(url: string) {
 
   useEffect(() => {
     const controller = new AbortController();
-    void load(controller.signal);
+    void Promise.resolve().then(() => load(controller.signal));
     return () => controller.abort();
   }, [load]);
 

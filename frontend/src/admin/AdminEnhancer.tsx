@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "./Icon";
 
@@ -29,6 +29,16 @@ export function AdminEnhancer() {
   const [query, setQuery] = useState("");
   const [links, setLinks] = useState<NavLink[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const openSearch = useCallback(() => {
+    setLinks(collectLinks());
+    setOpen(true);
+  }, []);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setQuery("");
+  }, []);
 
   useEffect(() => {
     const trigger = document.getElementById("fie-menu-trigger");
@@ -103,13 +113,17 @@ export function AdminEnhancer() {
 
   useEffect(() => {
     const trigger = document.getElementById("fie-command-trigger");
-    const onTrigger = () => setOpen(true);
+    const onTrigger = () => openSearch();
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        setOpen((current) => !current);
+        if (open) {
+          close();
+        } else {
+          openSearch();
+        }
       }
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") close();
     };
     trigger?.addEventListener("click", onTrigger);
     document.addEventListener("keydown", onKeyDown);
@@ -117,14 +131,12 @@ export function AdminEnhancer() {
       trigger?.removeEventListener("click", onTrigger);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, []);
+  }, [open, openSearch, close]);
 
   useEffect(() => {
     if (!open) {
-      setQuery("");
       return;
     }
-    setLinks(collectLinks());
     const timer = window.setTimeout(() => inputRef.current?.focus(), 30);
     return () => window.clearTimeout(timer);
   }, [open]);
@@ -149,7 +161,7 @@ export function AdminEnhancer() {
       className="fie-command-backdrop"
       role="presentation"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) setOpen(false);
+        if (event.target === event.currentTarget) close();
       }}
     >
       <div className="fie-command-dialog" role="dialog" aria-modal="true" aria-labelledby="fie-command-title">
@@ -171,7 +183,7 @@ export function AdminEnhancer() {
         <div className="fie-command-results">
           {filtered.length ? (
             filtered.map((link) => (
-              <a key={link.href} href={link.href} className="fie-command-item" onClick={() => setOpen(false)}>
+              <a key={link.href} href={link.href} className="fie-command-item" onClick={close}>
                 <span className="fie-command-item-icon"><Icon name="arrow" className="h-3.5 w-3.5" /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-ink">{link.label}</span>

@@ -9,7 +9,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         missing: list[str] = []
         for model in apps.get_models():
-            if model._meta.app_label.startswith("historical"):
+            if model._meta.model_name.startswith("historical"):
                 continue
             for field in model._meta.get_fields():
                 if not isinstance(field, FileField):

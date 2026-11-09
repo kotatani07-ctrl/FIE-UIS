@@ -19,13 +19,6 @@ PLACEHOLDER_PATTERN = re.compile(
 )
 
 
-class LiveManager(models.Manager):
-    def live(self):
-        return self.get_queryset().filter(
-            status="published", published_at__lte=timezone.now()
-        )
-
-
 class TimeStamped(models.Model):
     created_at = models.DateTimeField("Dibuat pada", auto_now_add=True)
     updated_at = models.DateTimeField("Diperbarui pada", auto_now=True)
@@ -45,9 +38,6 @@ class Publishable(TimeStamped):
         "Status", max_length=12, choices=Status.choices, default=Status.DRAFT
     )
     published_at = models.DateTimeField("Waktu terbit", null=True, blank=True)
-
-    objects = models.Manager()
-    live = LiveManager()
 
     class Meta:
         abstract = True
@@ -109,7 +99,7 @@ class Publishable(TimeStamped):
             if not getattr(self, "cover_alt", "").strip():
                 errors["cover_alt"] = "Teks alternatif sampul wajib untuk berita."
         if title:
-            duplicate = type(self).live.filter(title__iexact=title)
+            duplicate = type(self).live_queryset().filter(title__iexact=title)
             if self.pk:
                 duplicate = duplicate.exclude(pk=self.pk)
             if duplicate.exists():
@@ -152,8 +142,14 @@ class SlugMixin(models.Model):
         abstract = True
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(getattr(self, self.slug_source_field, ""))[:180]
+        base = (self.slug or slugify(getattr(self, self.slug_source_field, "")))[
+            :180
+        ] or "item"
+        candidate, suffix = base, 2
+        while type(self).objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+            candidate = f"{base[:175]}-{suffix}"
+            suffix += 1
+        self.slug = candidate
         return super().save(*args, **kwargs)
 
 

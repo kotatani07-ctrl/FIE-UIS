@@ -14,8 +14,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from apps.academics.models import StudyProgram
-from apps.content.models import Partner, StaticPage
 from apps.contact.models import ContactMessage
+from apps.content.models import Partner, StaticPage
 from apps.core.models import SiteSetting
 from apps.downloads.models import DownloadItem
 from apps.events.models import Event
@@ -283,9 +283,7 @@ def admin_dashboard_data(request):
             "last_login": _iso(request.user.last_login),
         },
         "site": {
-            "faculty_name": (
-                site.faculty_name if site else "Fakultas Ilmu Ekonomi"
-            ),
+            "faculty_name": (site.faculty_name if site else "Fakultas Ilmu Ekonomi"),
             "university_name": site.university_name if site else "",
             "tagline": site.tagline if site else "",
         },

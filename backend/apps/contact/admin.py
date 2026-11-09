@@ -6,6 +6,7 @@ from apps.contact.models import ContactMessage
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
     list_display = ("subject", "name", "email", "created_at", "is_read")
+    list_editable = ("is_read",)
     list_filter = ("is_read", "created_at")
     search_fields = ("name", "email", "subject", "message")
     date_hierarchy = "created_at"
@@ -18,7 +19,6 @@ class ContactMessageAdmin(admin.ModelAdmin):
         "ip_hash",
         "user_agent",
         "created_at",
-        "is_read",
     )
 
     def has_module_permission(self, request):
